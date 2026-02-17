@@ -76,6 +76,8 @@ class VoiceOverlay:
         root.overrideredirect(True)
         root.attributes("-topmost", True)
         root.attributes("-alpha", 0.95)
+        # Remove from taskbar
+        root.attributes("-type", "dock")
 
         w, h = self.WIDTH, self.HEIGHT
         x, y = self._compute_position(root.winfo_screenwidth(), root.winfo_screenheight())
@@ -155,8 +157,7 @@ class VoiceOverlay:
                         label_text.set("Processing...")
                         label.configure(fg="#F6AD55")
                     elif state == "done":
-                        preview = text[:40] + ("..." if len(text) > 40 else "")
-                        label_text.set(f"Done! {preview}")
+                        label_text.set("Done!")
                         label.configure(fg="#68D391")
                         auto_hide_id[0] = root.after(1500, lambda: root.withdraw())
                     elif state == "error":

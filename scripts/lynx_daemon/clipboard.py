@@ -29,31 +29,17 @@ def copy_to_clipboard(text: str) -> bool:
 
 
 def paste_into_active_window(text: str) -> bool:
-    """Simulate a paste (or type) into the currently focused window."""
+    """Type *text* directly into the currently focused window."""
     if not cfg.auto_paste:
         return False
 
+    # Always prefer direct typing — avoids clipboard race conditions.
     if _is_wayland():
-        if cfg.insert_mode == "type" and shutil.which("wtype"):
-            return subprocess.run(["wtype", text], check=False).returncode == 0
         if shutil.which("wtype"):
-            return (
-                subprocess.run(
-                    ["wtype", "-M", "ctrl", "v", "-m", "ctrl"], check=False
-                ).returncode
-                == 0
-            )
+            return subprocess.run(["wtype", text], check=False).returncode == 0
         return False
 
     if shutil.which("xdotool"):
-        if (
-            subprocess.run(
-                ["xdotool", "key", "--clearmodifiers", "ctrl+v"], check=False
-            ).returncode
-            == 0
-        ):
-            return True
-    if cfg.insert_mode == "type" and shutil.which("xdotool"):
         return (
             subprocess.run(
                 ["xdotool", "type", "--clearmodifiers", text], check=False

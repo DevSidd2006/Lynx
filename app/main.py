@@ -15,6 +15,7 @@ from .db import (
     get_app_settings,
     init_db,
     list_entries,
+    list_session_entries,
     set_app_setting,
     upsert_profile,
 )
@@ -53,6 +54,7 @@ def put_profile(payload: ProfileModel) -> ProfileModel:
         preferred_tone=payload.preferred_tone,
         writing_rules=payload.writing_rules,
         custom_dictionary=payload.custom_dictionary,
+        working_context=payload.working_context,
     )
     return ProfileModel(**fetch_profile())
 
@@ -73,12 +75,14 @@ def rewrite_text(payload: RewriteRequest) -> RewriteResponse:
     try:
         groq = GroqService()
         profile = fetch_profile()
+        history_entries = list_session_entries(context=payload.context)
         rewritten = groq.rewrite_text(
             text=payload.text,
             profile=profile,
             style=payload.style,
             context=payload.context,
             language=payload.language,
+            history=history_entries,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Rewrite failed: {exc}") from exc
@@ -124,12 +128,14 @@ async def transcribe_audio(
         )
         rewritten = transcript
         if auto_rewrite:
+            history_entries = list_session_entries(context=context)
             rewritten = groq.rewrite_text(
                 text=transcript,
                 profile=profile,
                 style=style,
                 context=context,
                 language=language,
+                history=history_entries,
             )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Transcription failed: {exc}") from exc

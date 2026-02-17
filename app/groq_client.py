@@ -31,12 +31,13 @@ class GroqService:
         style: str,
         context: str,
         language: str,
+        history: list[dict] | None = None,
     ) -> str:
         response = self.client.chat.completions.create(
             model=settings.text_model,
             temperature=0.2,
             messages=[
-                {"role": "system", "content": rewrite_system_prompt(profile, style, context, language)},
+                {"role": "system", "content": rewrite_system_prompt(profile, style, context, language, history)},
                 {"role": "user", "content": rewrite_user_prompt(text)},
             ],
         )

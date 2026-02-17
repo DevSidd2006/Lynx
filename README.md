@@ -1,145 +1,164 @@
-# Lynx (Ubuntu + Groq)
+# Lynx — AI Voice Dictation Assistant
 
-A complete local system that replicates core high-performance dictation flows:
-- speech-to-text dictation
-- instant rewrite for email/chat/docs tone
-- profile-aware output (dictionary + writing rules)
-- Ubuntu helper script for clipboard/paste workflow
+A fast, privacy-first voice dictation system that turns speech into polished text. Powered by Groq's Whisper STT and LLaMA for instant transcription and context-aware rewriting.
 
-## 1) Prerequisites
+**Hold a hotkey, speak, release — polished text appears at your cursor.**
 
-- Ubuntu 22.04+ (or similar)
-- Python 3.10+
-- Groq API key
-- Optional Ubuntu tools for system integration:
-  - `arecord` (`alsa-utils`)
-  - `jq`
-  - `wl-copy` (Wayland) or `xclip` (X11)
-  - `wtype` (Wayland auto-paste at cursor) or `xdotool` (X11 auto-paste at cursor)
+## Features
 
-## 2) Setup
+- **Push-to-Talk Hotkey** — Global hotkey (default `Ctrl+Space`) records while held, transcribes on release
+- **AI Rewriting** — Automatically rewrites raw transcription for tone and context (email, Slack, notes, docs)
+- **Session Memory** — Maintains context across dictations within a session for consistent output
+- **User Profile** — Custom dictionary, writing rules, preferred tone — the LLM adapts to your style
+- **Web Dashboard** — Record, transcribe, rewrite, and manage history from the browser
+- **Desktop App** — Tkinter GUI to manage services, edit config, and monitor health
+- **System Tray** — Live recording indicator with state-aware icon
+- **Voice Activity Detection** — Auto-stops recording after sustained silence
+- **Visual Overlay** — Animated audio level bar during recording
+- **Works Everywhere** — Types text directly into any focused app (Wayland + X11)
+
+## Architecture
+
+```
+┌─────────────┐    ┌──────────────────┐    ┌─────────────┐
+│  Web UI     │───>│  FastAPI Backend  │───>│  Groq API   │
+│  (browser)  │    │  (localhost)      │    │  (STT+LLM)  │
+└─────────────┘    └──────────────────┘    └─────────────┘
+                          ^
+┌─────────────┐           │
+│  Hotkey     │───────────┘
+│  Daemon     │
+│  (pynput)   │
+└─────────────┘
+```
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| API Server | `app/` | FastAPI backend — transcription, rewriting, history, profile |
+| Web UI | `web/` | Browser dashboard for recording and management |
+| Hotkey Daemon | `scripts/lynx_daemon/` | Push-to-talk with overlay, tray, VAD |
+| Desktop App | `desktop/` | Tkinter GUI for service management |
+| Scripts | `scripts/` | Bootstrap, service install, launchers |
+
+## Prerequisites
+
+- **Python 3.10+**
+- **Groq API key** — [Get one here](https://console.groq.com/)
+- **Ubuntu 22.04+** (or similar Linux distro)
+- System tools:
+  - `arecord` (from `alsa-utils`) — audio recording
+  - `wl-copy` + `wtype` (Wayland) **or** `xclip` + `xdotool` (X11) — clipboard & typing
+  - `notify-send` — desktop notifications (optional)
 
 ```bash
-cd /home/devsidd/willow-groq-clone
+# Ubuntu/Debian
+sudo apt install alsa-utils wl-clipboard wtype libnotify-bin
+# For X11 instead of Wayland:
+# sudo apt install alsa-utils xclip xdotool libnotify-bin
+```
+
+## Quick Start
+
+```bash
+git clone https://github.com/YOUR_USERNAME/lynx.git
+cd lynx
+
+# Setup
 cp .env.example .env
-# edit .env and set GROQ_API_KEY
-./scripts/start.sh
-```
+# Edit .env and set your GROQ_API_KEY
 
-Open:
-- `http://127.0.0.1:18080`
-
-## 2.2) Desktop application (native Ubuntu window)
-
-Run:
-
-```bash
-cd /home/devsidd/willow-groq-clone
 ./scripts/bootstrap.sh
-./scripts/run_desktop_app.sh
+
+# Start everything (API + hotkey daemon)
+./scripts/start_all.sh
 ```
 
-Install app launcher in Ubuntu app menu:
+Open the web dashboard at **http://127.0.0.1:8080**
+
+### Hotkey Daemon Only
 
 ```bash
-cd /home/devsidd/willow-groq-clone
-./scripts/install_desktop_shortcut.sh
-```
-
-The desktop app provides:
-- Start/stop local API + hotkey daemon
-- Install/restart user services
-- Edit and save `.env` settings
-- Open web UI directly
-- Live API health indicator
-
-## 2.1) Production rollout (recommended)
-
-```bash
-cd /home/devsidd/willow-groq-clone
-./scripts/bootstrap.sh
 source .venv/bin/activate
-pip install -r requirements-hotkey.txt
-./scripts/install_user_service.sh
-```
-
-Verify services:
-
-```bash
-systemctl --user status willow-groq-clone-api.service willow-groq-clone-hotkey.service --no-pager
-```
-
-## 3) Key API routes
-
-- `GET /api/health`
-- `GET /api/profile`
-- `PUT /api/profile`
-- `POST /api/transcribe` (multipart audio)
-- `POST /api/rewrite`
-- `GET /api/history`
-- `GET /api/export`
-
-## 4) Ubuntu “works anywhere” flow
-
-This script records, transcribes, rewrites, and copies result to your clipboard:
-
-```bash
-chmod +x scripts/ubuntu_hotkey_dictate.sh
-./scripts/ubuntu_hotkey_dictate.sh
-```
-
-Bind it to a custom keyboard shortcut in Ubuntu settings for one-key dictation.
-
-## 4.1) Real push-to-talk (press to start, release to stop)
-
-This daemon gives high-performance Lynx behavior:
-- Hold hotkey: recording starts
-- Release hotkey: recording stops, transcribe + rewrite runs, text is copied and optionally pasted
-
-```bash
-cd /home/devsidd/willow-groq-clone
-source .venv/bin/activate
-pip install -r requirements.txt
 pip install -r requirements-hotkey.txt
 python scripts/hotkey_push_to_talk.py
 ```
 
-Hotkey and behavior are configurable in `.env`:
-- `WILLOW_HOTKEY=ctrl+space`
-- `WILLOW_AUTO_PASTE=true`
-- `WILLOW_INSERT_MODE=paste` (`paste` or `type`)
-- `WILLOW_OVERLAY=true` (small rectangular live voice indicator during recording)
-- `WILLOW_STYLE=professional`
-- `WILLOW_CONTEXT=email`
-- `WILLOW_LANGUAGE=en`
+Hold `Ctrl+Space` to record, release to transcribe and paste.
 
-For true “insert at current cursor everywhere” behavior:
-- On Wayland install: `wl-clipboard` and `wtype`
-- On X11 install: `xclip` and `xdotool`
-
-## 4.2) Run as user service (optional)
+### Run as systemd Service
 
 ```bash
-cd /home/devsidd/willow-groq-clone
 ./scripts/bootstrap.sh
 source .venv/bin/activate
 pip install -r requirements-hotkey.txt
 ./scripts/install_user_service.sh
 ```
 
-## 5) Security and privacy notes
+Verify:
+```bash
+systemctl --user status lynx-api.service lynx-hotkey.service --no-pager
+```
 
-- Data is stored locally in SQLite: `data/willow_clone.db`.
-- Your audio/text is sent to Groq APIs using your key.
-- If you need zero retention/enterprise guarantees, configure that on your Groq account and infra side.
+## Configuration
 
-## 6) Troubleshooting
+All settings are in `.env` (copy from `.env.example`):
 
-- `Rewrite failed` / `Transcription failed`: verify `GROQ_API_KEY` and model names in `.env`.
-- Browser mic denied: allow microphone permissions for localhost.
-- No clipboard integration: install `wl-copy` or `xclip`.
-- Hotkey service not starting: install `requirements-hotkey.txt` in `.venv`.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GROQ_API_KEY` | — | Your Groq API key (required) |
+| `GROQ_STT_MODEL` | `whisper-large-v3-turbo` | Speech-to-text model |
+| `GROQ_TEXT_MODEL` | `llama-3.3-70b-versatile` | LLM for rewriting |
+| `PORT` | `8080` | API server port |
+| `WILLOW_HOTKEY` | `ctrl+space` | Global hotkey binding |
+| `WILLOW_STYLE` | `professional` | Default writing style |
+| `WILLOW_CONTEXT` | `email` | Default context (email/slack/notes/docs) |
+| `WILLOW_LANGUAGE` | `en` | Transcription language |
+| `WILLOW_AUTO_PASTE` | `true` | Auto-type text into active window |
+| `WILLOW_INSERT_MODE` | `type` | How to insert text (`type` or `paste`) |
+| `WILLOW_OVERLAY` | `true` | Show recording overlay |
+| `WILLOW_VAD_ENABLED` | `true` | Auto-stop on silence |
+| `WILLOW_VAD_SILENCE_TIMEOUT` | `3` | Seconds of silence before auto-stop |
 
-## 7) Research basis
+## API Endpoints
 
-See `docs/research.md` for the product and API research used to shape this clone.
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/profile` | Get user profile |
+| `PUT` | `/api/profile` | Update profile |
+| `POST` | `/api/transcribe` | Upload audio, get transcription + rewrite |
+| `POST` | `/api/rewrite` | Rewrite plain text |
+| `GET` | `/api/history` | List transcription history |
+| `GET` | `/api/settings` | Get app settings |
+| `PUT` | `/api/settings` | Update a setting |
+| `GET` | `/api/export` | Export all data as JSON |
+
+## How Session Memory Works
+
+Lynx feeds the last 5 dictations (from the same context, within 30 minutes) to the LLM as context. This means:
+
+- Pronouns like "he" or "that project" resolve correctly across dictations
+- Tone stays consistent when dictating a long email in parts
+- Greetings and sign-offs aren't repeated
+- Different contexts (email vs Slack) have separate memory
+
+## Privacy
+
+- All data is stored locally in SQLite (`data/lynx.db`)
+- Audio and text are sent to Groq APIs using **your** API key
+- No telemetry, no third-party tracking
+- Configure data retention on your Groq account if needed
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `Rewrite failed` / `Transcription failed` | Check `GROQ_API_KEY` and model names in `.env` |
+| Browser mic denied | Allow microphone permissions for localhost |
+| No clipboard integration | Install `wl-copy`/`wtype` (Wayland) or `xclip`/`xdotool` (X11) |
+| Hotkey not working | Install `requirements-hotkey.txt` in `.venv` |
+| Old clipboard text pasted | Ensure `WILLOW_INSERT_MODE=type` in `.env` |
+
+## License
+
+MIT

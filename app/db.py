@@ -33,6 +33,7 @@ def init_db() -> None:
                 preferred_tone TEXT DEFAULT 'professional',
                 writing_rules_json TEXT DEFAULT '[]',
                 custom_dictionary_json TEXT DEFAULT '[]',
+                working_context TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
@@ -93,6 +94,7 @@ def fetch_profile() -> dict[str, Any]:
         "preferred_tone": row["preferred_tone"],
         "writing_rules": json.loads(row["writing_rules_json"]),
         "custom_dictionary": json.loads(row["custom_dictionary_json"]),
+        "working_context": row["working_context"],
     }
 
 
@@ -102,6 +104,7 @@ def upsert_profile(
     preferred_tone: str,
     writing_rules: list[str],
     custom_dictionary: list[str],
+    working_context: str = "",
 ) -> None:
     with get_conn() as conn:
         conn.execute(
@@ -112,6 +115,7 @@ def upsert_profile(
                 preferred_tone = ?,
                 writing_rules_json = ?,
                 custom_dictionary_json = ?,
+                working_context = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = 1
             """,
@@ -121,6 +125,7 @@ def upsert_profile(
                 preferred_tone,
                 json.dumps(writing_rules),
                 json.dumps(custom_dictionary),
+                working_context,
             ),
         )
         conn.commit()
@@ -136,6 +141,26 @@ def list_entries(limit: int = 25) -> list[dict[str, Any]]:
             LIMIT ?
             """,
             (limit,),
+        ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+def list_session_entries(
+    context: str, minutes: int = 30, limit: int = 5
+) -> list[dict[str, Any]]:
+    """Return recent entries matching *context* from the last *minutes*."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, source_text, rewritten_text, style, language, context, created_at
+            FROM entries
+            WHERE context = ?
+              AND created_at >= datetime('now', ? || ' minutes')
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (context, f"-{minutes}", limit),
         ).fetchall()
 
     return [dict(row) for row in rows]

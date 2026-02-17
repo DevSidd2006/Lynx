@@ -76,7 +76,7 @@ class SystemTrayIcon:
         self._state = state
         if self._icon is not None:
             self._icon.icon = _make_icon(state)
-            self._icon.title = f"Lynx — {state.value.capitalize()}"
+            self._icon.title = f"Lynx - {state.value.capitalize()}"
             self._icon.update_menu()
 
     def _build_menu(self) -> pystray.Menu:
@@ -116,7 +116,7 @@ class SystemTrayIcon:
         self._icon = pystray.Icon(
             name="lynx-daemon",
             icon=_make_icon(DaemonState.IDLE),
-            title="Lynx — Idle",
+            title="Lynx - Idle",
             menu=self._build_menu(),
         )
         self._icon.run()

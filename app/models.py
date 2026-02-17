@@ -9,6 +9,7 @@ class ProfileModel(BaseModel):
     preferred_tone: str = "professional"
     writing_rules: list[str] = Field(default_factory=list)
     custom_dictionary: list[str] = Field(default_factory=list)
+    working_context: str = ""
 
 
 class RewriteRequest(BaseModel):

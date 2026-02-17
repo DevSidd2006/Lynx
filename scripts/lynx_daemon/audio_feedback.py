@@ -27,13 +27,5 @@ _player: str | None = _find_player()
 
 def play(event: str) -> None:
     """Play a feedback sound for *event*. Non-blocking, fire-and-forget."""
-    if not cfg.audio_feedback or _player is None:
-        return
-    path = _SOUND_MAP.get(event)
-    if path is None or not Path(path).exists():
-        return
-    subprocess.Popen(
-        [_player, path],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    # Audio feedback disabled
+    return
