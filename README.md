@@ -1,103 +1,145 @@
 # Lynx — AI Voice Dictation Assistant
 
-A fast, privacy-first voice dictation system that turns speech into polished text. Powered by Groq's Whisper STT and LLaMA for instant transcription and context-aware rewriting.
+Lynx is a high-performance, privacy-first voice dictation system that transforms raw speech into polished, context-aware text. Leveraging Groq's lightning-fast Whisper STT and LLaMA models, it provides near-instant transcription and intelligent rewriting tailored to your unique writing style.
 
-**Hold a hotkey, speak, release — polished text appears at your cursor.**
+**Hold your hotkey, speak naturally, and watch as perfectly formatted text appears at your cursor.**
 
-## Features
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
+![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
+![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/css3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white)
+![Shell Script](https://img.shields.io/badge/shell_script-%23121011.svg?style=for-the-badge&logo=gnu-bash&logoColor=white)
 
-- **Push-to-Talk Hotkey** — Global hotkey (default `Ctrl+Space`) records while held, transcribes on release
-- **AI Rewriting** — Automatically rewrites raw transcription for tone and context (email, Slack, notes, docs)
-- **Session Memory** — Maintains context across dictations within a session for consistent output
-- **User Profile** — Custom dictionary, writing rules, preferred tone — the LLM adapts to your style
-- **Web Dashboard** — Record, transcribe, rewrite, and manage history from the browser
-- **Desktop App** — Tkinter GUI to manage services, edit config, and monitor health
-- **System Tray** — Live recording indicator with state-aware icon
-- **Voice Activity Detection** — Auto-stops recording after sustained silence
-- **Visual Overlay** — Animated audio level bar during recording
-- **Works Everywhere** — Types text directly into any focused app (Wayland + X11)
+---
 
-## Architecture
+## 🚀 Features
 
-```
-┌─────────────┐    ┌──────────────────┐    ┌─────────────┐
-│  Web UI     │───>│  FastAPI Backend  │───>│  Groq API   │
-│  (browser)  │    │  (localhost)      │    │  (STT+LLM)  │
-└─────────────┘    └──────────────────┘    └─────────────┘
-                          ^
-┌─────────────┐           │
-│  Hotkey     │───────────┘
-│  Daemon     │
-│  (pynput)   │
-└─────────────┘
+-   **Global Push-to-Talk** — Default `Ctrl+Space`. Records while held, transcribes and auto-pastes upon release.
+-   **Intelligent AI Polishing** — Automatically cleans up "ums," "ahs," and stuttering. Tailors output to specific contexts (Email, Slack, Notes, Documentation).
+-   **Personalized User Profile** — Define your name, role, preferred tone, and a **Custom Dictionary** for specialized jargon or names.
+-   **Seamless Desktop Integration** — Works across all Linux applications (Wayland and X11 support) by injecting text directly into the focused window.
+-   **Voice Activity Detection (VAD)** — Intelligently detects silence to automatically stop recording if you forget to release the key.
+-   **Real-time Visual Feedback** — Animated overlay and system tray indicators show recording levels and processing states.
+-   **Web Dashboard** — Full-featured browser interface for manual recording, history management, and profile configuration.
+-   **Desktop Management App** — A dedicated Tkinter GUI to manage backend services, view logs, and monitor system health.
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    A[Hotkey Daemon] -->|Audio| B(FastAPI Backend)
+    C[Web UI] -->|Audio/Text| B
+    D[Desktop App] -->|Manage| B
+    B -->|Whisper STT| E[Groq API]
+    B -->|LLaMA Rewriter| E
+    B <-->|SQLite| F[(Local Database)]
 ```
 
 | Component | Path | Purpose |
-|-----------|------|---------|
-| API Server | `app/` | FastAPI backend — transcription, rewriting, history, profile |
-| Web UI | `web/` | Browser dashboard for recording and management |
-| Hotkey Daemon | `scripts/lynx_daemon/` | Push-to-talk with overlay, tray, VAD |
-| Desktop App | `desktop/` | Tkinter GUI for service management |
-| Scripts | `scripts/` | Bootstrap, service install, launchers |
+| :--- | :--- | :--- |
+| **Backend API** | `app/` | FastAPI server handling STT, rewriting, and data persistence. |
+| **Web UI** | `web/` | Modern browser dashboard for centralized management. |
+| **Hotkey Daemon** | `scripts/lynx_daemon/` | Core background process for global PTT and system integration. |
+| **Desktop App** | `desktop/` | GUI for orchestrating services and viewing logs. |
+| **Utilities** | `scripts/` | Installation, bootstrap, and service management scripts. |
 
-## Prerequisites
+---
 
-- **Python 3.10+**
-- **Groq API key** — [Get one here](https://console.groq.com/)
-- **Ubuntu 22.04+** (or similar Linux distro)
-- System tools:
-  - `arecord` (from `alsa-utils`) — audio recording
-  - `wl-copy` + `wtype` (Wayland) **or** `xclip` + `xdotool` (X11) — clipboard & typing
-  - `notify-send` — desktop notifications (optional)
+## 🛠️ Setup & Installation
 
+### 1. Prerequisites
+
+-   **Python 3.10+**
+-   **Groq API Key** — [Get yours here](https://console.groq.com/)
+-   **Linux Distribution** — Optimized for Ubuntu 22.04+ (Wayland/X11).
+
+#### System Dependencies:
 ```bash
 # Ubuntu/Debian
-sudo apt install alsa-utils wl-clipboard wtype libnotify-bin
-# For X11 instead of Wayland:
-# sudo apt install alsa-utils xclip xdotool libnotify-bin
+sudo apt update && sudo apt install -y alsa-utils wl-clipboard wtype libnotify-bin sqlite3
 ```
+*Note: For X11 users, `xclip` and `xdotool` are used automatically if detected.*
 
-## Quick Start
+### 2. Quick Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/lynx.git
-cd lynx
+# Clone the repository
+git clone https://github.com/devsidd/willow-groq-clone.git
+cd willow-groq-clone
 
-# Setup
-cp .env.example .env
-# Edit .env and set your GROQ_API_KEY
-
+# Run the bootstrap script
 ./scripts/bootstrap.sh
 
-# Start everything (API + hotkey daemon)
+# Configure environment
+cp .env.example .env
+```
+
+### 3. Configuration
+
+**Crucial Step:** Open `.env` and add your `GROQ_API_KEY`.
+
+```env
+GROQ_API_KEY=gsk_your_key_here
+PORT=18080
+WILLOW_CLONE_URL=http://127.0.0.1:18080
+```
+
+---
+
+## 🏁 Usage
+
+### Starting the Services
+
+The easiest way to start Lynx is using the unified start script:
+```bash
+./scripts/start_all.sh
+```
+This launches the **Backend API** (port 18080) and the **Hotkey Daemon** in the background.
+
+### Using the Hotkey
+1.  Focus any text field (Browser, VS Code, Slack, etc.).
+2.  **Hold `Ctrl + Space`**.
+3.  Speak your mind.
+4.  **Release**.
+5.  Wait a moment for the notification; the polished text will be typed out automatically.
+
+### Web Dashboard
+Visit [http://127.0.0.1:18080](http://127.0.0.1:18080) to:
+-   Configure your **User Profile** (Tone, Role, Dictionary).
+-   View your **Transcription History**.
+-   Test different rewriting styles manually.
+
+### Desktop App
+Launch the management GUI:
+```bash
+./scripts/run_desktop_app.sh
+```
+
+---
+
+## 🧹 Maintenance & Troubleshooting
+
+### Resetting the Database
+If you need to wipe your history or profile:
+```bash
+pkill -f uvicorn
+rm data/lynx.db
 ./scripts/start_all.sh
 ```
 
-Open the web dashboard at **http://127.0.0.1:8080**
+### Logs
+Monitor system behavior:
+-   **Backend Logs**: `tail -f backend.log`
+-   **Hotkey Logs**: `tail -f hotkey.log`
 
-### Hotkey Daemon Only
-
-```bash
-source .venv/bin/activate
-pip install -r requirements-hotkey.txt
-python scripts/hotkey_push_to_talk.py
-```
-
-Hold `Ctrl+Space` to record, release to transcribe and paste.
-
-### Run as systemd Service
-
-```bash
-./scripts/bootstrap.sh
-source .venv/bin/activate
-pip install -r requirements-hotkey.txt
-./scripts/install_user_service.sh
-```
-
-Verify:
-```bash
-systemctl --user status lynx-api.service lynx-hotkey.service --no-pager
-```
+### Common Issues
+-   **API Error (500)**: Ensure your `GROQ_API_KEY` is correct in `.env`.
+-   **No Audio**: Verify your microphone is recognized by `arecord -l`.
+-   **Hotkey Not Working**: Ensure `pynput` is installed and the daemon is running.
 
 ## Configuration
 

@@ -75,14 +75,13 @@ def rewrite_text(payload: RewriteRequest) -> RewriteResponse:
     try:
         groq = GroqService()
         profile = fetch_profile()
-        history_entries = list_session_entries(context=payload.context)
         rewritten = groq.rewrite_text(
             text=payload.text,
             profile=profile,
             style=payload.style,
             context=payload.context,
             language=payload.language,
-            history=history_entries,
+            history=None,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Rewrite failed: {exc}") from exc
@@ -128,16 +127,17 @@ async def transcribe_audio(
         )
         rewritten = transcript
         if auto_rewrite:
-            history_entries = list_session_entries(context=context)
             rewritten = groq.rewrite_text(
                 text=transcript,
                 profile=profile,
                 style=style,
                 context=context,
                 language=language,
-                history=history_entries,
+                history=None,
             )
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Transcription failed: {exc}") from exc
 
     entry_id = add_entry(

@@ -41,7 +41,7 @@ class DaemonConfig:
 
 
 cfg = DaemonConfig(
-    api_url=os.getenv("WILLOW_CLONE_URL", "http://127.0.0.1:8080"),
+    api_url=os.getenv("WILLOW_CLONE_URL", "http://127.0.0.1:18080"),
     hotkey=os.getenv("WILLOW_HOTKEY", "ctrl+space"),
     style=os.getenv("WILLOW_STYLE", "professional"),
     context=os.getenv("WILLOW_CONTEXT", "email"),

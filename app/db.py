@@ -37,7 +37,17 @@ def init_db() -> None:
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
-
+            """
+        )
+        # Handle schema upgrades (add columns if missing)
+        try:
+            conn.execute("ALTER TABLE profile ADD COLUMN working_context TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
+        
+        conn.executescript(
+            """
             CREATE TABLE IF NOT EXISTS entries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source_text TEXT NOT NULL,
@@ -88,13 +98,16 @@ def fetch_profile() -> dict[str, Any]:
     if row is None:
         raise RuntimeError("Profile record missing")
 
+    # Safely convert sqlite3.Row to dict
+    data = dict(row)
+
     return {
-        "full_name": row["full_name"],
-        "role": row["role"],
-        "preferred_tone": row["preferred_tone"],
-        "writing_rules": json.loads(row["writing_rules_json"]),
-        "custom_dictionary": json.loads(row["custom_dictionary_json"]),
-        "working_context": row["working_context"],
+        "full_name": data.get("full_name", ""),
+        "role": data.get("role", ""),
+        "preferred_tone": data.get("preferred_tone", "professional"),
+        "writing_rules": json.loads(data.get("writing_rules_json", "[]")),
+        "custom_dictionary": json.loads(data.get("custom_dictionary_json", "[]")),
+        "working_context": data.get("working_context", ""),
     }
 
 
