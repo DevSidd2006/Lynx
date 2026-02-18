@@ -9,6 +9,12 @@ pkill -f "uvicorn app.main:app" || true
 pkill -f "scripts/hotkey_push_to_talk.py" || true
 fuser -k 18080/tcp 2>/dev/null || true
 
+if [ -f ".env" ]; then
+  set -a
+  source .env
+  set +a
+fi
+
 if [ ! -d ".venv" ]; then
   echo "Virtual environment not found. Running bootstrap..."
   bash scripts/bootstrap.sh

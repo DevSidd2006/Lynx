@@ -98,7 +98,7 @@ The easiest way to start Lynx is using the unified start script:
 ```bash
 ./scripts/start_all.sh
 ```
-This launches the **Backend API** (port 18080) and the **Hotkey Daemon** in the background.
+This launches the **Backend API** (uses `PORT` from `.env`, defaults to 18080 if unset) and the **Hotkey Daemon** in the background.
 
 ### Using the Hotkey
 1.  Focus any text field (Browser, VS Code, Slack, etc.).
