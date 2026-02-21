@@ -35,19 +35,20 @@ EOD
 cat > "$HOTKEY_SERVICE_FILE" <<EOD
 [Unit]
 Description=Lynx Hotkey Daemon
-After=willow-groq-clone-api.service
+After=willow-groq-clone-api.service graphical-session.target
 Requires=willow-groq-clone-api.service
+PartOf=graphical-session.target
 
 [Service]
 Type=simple
 WorkingDirectory=$ROOT_DIR
 EnvironmentFile=$ROOT_DIR/.env
 ExecStart=$ROOT_DIR/scripts/run_hotkey_daemon.sh
-Restart=always
-RestartSec=2
+Restart=on-failure
+RestartSec=5
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target
 EOD
 
 HAS_PYNPUT=0

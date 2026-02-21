@@ -17,13 +17,24 @@ def _is_wayland() -> bool:
 
 def copy_to_clipboard(text: str) -> bool:
     """Copy *text* to the system clipboard. Returns ``True`` on success."""
-    if shutil.which("wl-copy"):
-        subprocess.run(["wl-copy"], input=text.encode(), check=False)
-        return True
+    if _is_wayland():
+        if shutil.which("wl-copy"):
+            subprocess.run(["wl-copy"], input=text.encode(), check=False)
+            return True
+        # Fall through to xclip via XWayland if wl-copy not available
     if shutil.which("xclip"):
         subprocess.run(
             ["xclip", "-selection", "clipboard"], input=text.encode(), check=False
         )
+        return True
+    if shutil.which("xsel"):
+        subprocess.run(
+            ["xsel", "--clipboard", "--input"], input=text.encode(), check=False
+        )
+        return True
+    # Last resort on Wayland: try wl-copy even if not detected above
+    if shutil.which("wl-copy"):
+        subprocess.run(["wl-copy"], input=text.encode(), check=False)
         return True
     return False
 
@@ -37,6 +48,14 @@ def paste_into_active_window(text: str) -> bool:
     if _is_wayland():
         if shutil.which("wtype"):
             return subprocess.run(["wtype", text], check=False).returncode == 0
+        # Fallback: xdotool via XWayland (works when DISPLAY is set)
+        if shutil.which("xdotool"):
+            return (
+                subprocess.run(
+                    ["xdotool", "type", "--clearmodifiers", text], check=False
+                ).returncode
+                == 0
+            )
         return False
 
     if shutil.which("xdotool"):

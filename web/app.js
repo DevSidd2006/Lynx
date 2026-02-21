@@ -15,6 +15,7 @@ const historyEl = document.getElementById("history");
 const fullNameEl = document.getElementById("fullName");
 const roleEl = document.getElementById("role");
 const toneEl = document.getElementById("tone");
+const defaultLanguageEl = document.getElementById("defaultLanguage");
 const dictionaryEl = document.getElementById("dictionary");
 const rulesEl = document.getElementById("rules");
 
@@ -67,6 +68,8 @@ async function loadProfile() {
   fullNameEl.value = data.full_name || "";
   roleEl.value = data.role || "";
   toneEl.value = data.preferred_tone || "professional";
+  defaultLanguageEl.value = data.default_language || "en";
+  languageEl.value = data.default_language || "en";
   dictionaryEl.value = (data.custom_dictionary || []).join("\n");
   rulesEl.value = (data.writing_rules || []).join("\n");
 }
@@ -77,6 +80,7 @@ async function saveProfile() {
     full_name: fullNameEl.value.trim(),
     role: roleEl.value.trim(),
     preferred_tone: toneEl.value.trim() || "professional",
+    default_language: defaultLanguageEl.value,
     custom_dictionary: linesToArray(dictionaryEl.value),
     writing_rules: linesToArray(rulesEl.value),
   };

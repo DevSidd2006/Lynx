@@ -55,6 +55,7 @@ def put_profile(payload: ProfileModel) -> ProfileModel:
         writing_rules=payload.writing_rules,
         custom_dictionary=payload.custom_dictionary,
         working_context=payload.working_context,
+        default_language=payload.default_language,
     )
     return ProfileModel(**fetch_profile())
 

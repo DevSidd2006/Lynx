@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import enum
+import os
 import shutil
 import subprocess
 import webbrowser
@@ -76,7 +77,7 @@ class SystemTrayIcon:
         self._state = state
         if self._icon is not None:
             self._icon.icon = _make_icon(state)
-            self._icon.title = f"Lynx — {state.value.capitalize()}"
+            self._icon.title = f"Lynx - {state.value.capitalize()}"
             self._icon.update_menu()
 
     def _build_menu(self) -> pystray.Menu:
@@ -116,7 +117,7 @@ class SystemTrayIcon:
         self._icon = pystray.Icon(
             name="lynx-daemon",
             icon=_make_icon(DaemonState.IDLE),
-            title="Lynx — Idle",
+            title="Lynx - Idle",
             menu=self._build_menu(),
         )
         self._icon.run()
@@ -125,6 +126,17 @@ class SystemTrayIcon:
 # ---------------------------------------------------------------------------
 # Daemon entry point
 # ---------------------------------------------------------------------------
+
+def _warn_wayland_hotkey(exc: Exception) -> None:
+    session = os.getenv("XDG_SESSION_TYPE", "unknown")
+    print(f"[Lynx] Hotkey listener failed: {exc}", flush=True)
+    if session == "wayland" or os.getenv("WAYLAND_DISPLAY"):
+        print("[Lynx] Wayland detected. To enable global hotkeys, add your user to the input group:", flush=True)
+        print("[Lynx]   sudo usermod -aG input $USER   (then log out and back in)", flush=True)
+        print("[Lynx] Or ensure XWayland is running and DISPLAY is set.", flush=True)
+    else:
+        print("[Lynx] Check that a display server (X11/Wayland) is available.", flush=True)
+
 
 def run_daemon() -> None:
     """Start the full daemon: tray icon, pynput listener, and overlay."""
@@ -143,7 +155,12 @@ def run_daemon() -> None:
 
         listener = keyboard.Listener(on_press=ptt.on_press, on_release=ptt.on_release)
         listener.daemon = True
-        listener.start()
+        try:
+            listener.start()
+        except Exception as exc:
+            _warn_wayland_hotkey(exc)
+            overlay.stop()
+            return
 
         notify(f"Lynx push-to-talk active on [{cfg.hotkey}]")
 
@@ -152,7 +169,17 @@ def run_daemon() -> None:
             overlay.stop()
 
         tray.on_quit = on_quit
-        tray.run()  # blocks until quit
+        try:
+            tray.run()  # blocks until quit
+        except Exception as exc:
+            print(f"[Lynx] System tray failed: {exc}", flush=True)
+            print("[Lynx] On GNOME Wayland, install: sudo apt install gir1.2-ayatanaappindicator3-0.1", flush=True)
+            # Fall back to tray-less mode — keep listener running
+            notify(f"Lynx running without tray (hotkey: [{cfg.hotkey}])")
+            try:
+                listener.join()
+            finally:
+                overlay.stop()
 
     elif keyboard is not None:
         # Fallback: no tray, pynput on main thread (original behaviour)
@@ -164,6 +191,8 @@ def run_daemon() -> None:
                 on_press=ptt.on_press, on_release=ptt.on_release
             ) as listener:
                 listener.join()
+        except Exception as exc:
+            _warn_wayland_hotkey(exc)
         finally:
             overlay.stop()
     else:

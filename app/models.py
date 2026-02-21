@@ -7,6 +7,7 @@ class ProfileModel(BaseModel):
     full_name: str = ""
     role: str = ""
     preferred_tone: str = "professional"
+    default_language: str = "en"
     writing_rules: list[str] = Field(default_factory=list)
     custom_dictionary: list[str] = Field(default_factory=list)
     working_context: str = ""

@@ -31,6 +31,7 @@ def init_db() -> None:
                 full_name TEXT DEFAULT '',
                 role TEXT DEFAULT '',
                 preferred_tone TEXT DEFAULT 'professional',
+                default_language TEXT DEFAULT 'en',
                 writing_rules_json TEXT DEFAULT '[]',
                 custom_dictionary_json TEXT DEFAULT '[]',
                 working_context TEXT DEFAULT '',
@@ -43,7 +44,11 @@ def init_db() -> None:
         try:
             conn.execute("ALTER TABLE profile ADD COLUMN working_context TEXT DEFAULT ''")
         except sqlite3.OperationalError:
-            # Column already exists
+            pass
+        
+        try:
+            conn.execute("ALTER TABLE profile ADD COLUMN default_language TEXT DEFAULT 'en'")
+        except sqlite3.OperationalError:
             pass
         
         conn.executescript(
@@ -105,6 +110,7 @@ def fetch_profile() -> dict[str, Any]:
         "full_name": data.get("full_name", ""),
         "role": data.get("role", ""),
         "preferred_tone": data.get("preferred_tone", "professional"),
+        "default_language": data.get("default_language", "en"),
         "writing_rules": json.loads(data.get("writing_rules_json", "[]")),
         "custom_dictionary": json.loads(data.get("custom_dictionary_json", "[]")),
         "working_context": data.get("working_context", ""),
@@ -118,6 +124,7 @@ def upsert_profile(
     writing_rules: list[str],
     custom_dictionary: list[str],
     working_context: str = "",
+    default_language: str = "en",
 ) -> None:
     with get_conn() as conn:
         conn.execute(
@@ -126,6 +133,7 @@ def upsert_profile(
             SET full_name = ?,
                 role = ?,
                 preferred_tone = ?,
+                default_language = ?,
                 writing_rules_json = ?,
                 custom_dictionary_json = ?,
                 working_context = ?,
@@ -136,6 +144,7 @@ def upsert_profile(
                 full_name,
                 role,
                 preferred_tone,
+                default_language,
                 json.dumps(writing_rules),
                 json.dumps(custom_dictionary),
                 working_context,

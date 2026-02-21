@@ -12,8 +12,5 @@ if [ -f ".env" ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-
-exec uvicorn app.main:app --host "${HOST:-127.0.0.1}" --port "${PORT:-8080}" --reload
+# Use virtual environment python directly 
+exec .venv/bin/python3 -m uvicorn app.main:app --host "${HOST:-127.0.0.1}" --port "${PORT:-8080}" --reload

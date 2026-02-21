@@ -155,11 +155,23 @@ class PushToTalk:
             play("error")
             return
 
+        # Fetch current profile to get default language/style
+        try:
+            profile_req = urllib.request.Request(f"{cfg.api_url}/api/profile")
+            with urllib.request.urlopen(profile_req, timeout=5) as resp:
+                profile = json.loads(resp.read().decode())
+                lang = profile.get("default_language", cfg.language)
+                tone = profile.get("preferred_tone", cfg.style)
+        except Exception:
+            # Fallback to config
+            lang = cfg.language
+            tone = cfg.style
+
         with self.current_wav.open("rb") as fp:
             data = {
-                "style": cfg.style,
+                "style": tone,
                 "context": cfg.context,
-                "language": cfg.language,
+                "language": lang,
                 "auto_rewrite": "true",
             }
             boundary = "----LynxBoundary7d9a1f"

@@ -75,9 +75,15 @@ class VoiceOverlay:
         root.withdraw()
         root.overrideredirect(True)
         root.attributes("-topmost", True)
-        root.attributes("-alpha", 0.95)
-        # Remove from taskbar
-        root.attributes("-type", "dock")
+        try:
+            root.attributes("-alpha", 0.95)
+        except tk.TclError:
+            pass
+        # Remove from taskbar (X11 only; silently ignored on Wayland)
+        try:
+            root.attributes("-type", "dock")
+        except tk.TclError:
+            pass
 
         w, h = self.WIDTH, self.HEIGHT
         x, y = self._compute_position(root.winfo_screenwidth(), root.winfo_screenheight())
